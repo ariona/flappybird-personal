@@ -87,6 +87,74 @@
         .fullscreen-btn:hover {
             background: rgba(255, 255, 255, 0.5);
         }
+        .settings-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 8px 16px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            border: 2px solid white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 100;
+        }
+        .settings-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        .settings-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            color: white;
+        }
+        .settings-panel h2 {
+            font-size: 32px;
+            color: #FFD700;
+            margin-bottom: 30px;
+        }
+        .settings-item {
+            width: 300px;
+            margin-bottom: 20px;
+        }
+        .settings-item label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+        .settings-item input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+        .settings-item span {
+            float: right;
+            font-size: 16px;
+            color: #FFD700;
+        }
+        .close-settings {
+            margin-top: 20px;
+            padding: 10px 30px;
+            font-size: 18px;
+            background: #FF6B35;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .close-settings:hover {
+            transform: scale(1.05);
+        }
         .score {
             position: absolute;
             top: 10px;
@@ -101,6 +169,7 @@
 </head>
 <body>
     <div class="game-container">
+        <button class="settings-btn" id="settingsBtn">⚙️ Settings</button>
         <button class="fullscreen-btn" id="fullscreenBtn">⛶ Fullscreen</button>
         <canvas id="gameCanvas"></canvas>
         <div class="score" id="scoreDisplay">0</div>
@@ -108,6 +177,22 @@
             <h1>Flappy Bird</h1>
             <p>Click or Press Space to Start</p>
             <button class="start-btn" id="startBtn">Start Game</button>
+        </div>
+        <div class="settings-panel" id="settingsPanel" style="display: none;">
+            <h2>⚙️ Game Settings</h2>
+            <div class="settings-item">
+                <label>Pipe Speed <span id="speedValue">1x</span></label>
+                <input type="range" id="speedSlider" min="0.5" max="2" step="0.1" value="1">
+            </div>
+            <div class="settings-item">
+                <label>Jump Height <span id="jumpValue">100%</span></label>
+                <input type="range" id="jumpSlider" min="50" max="200" step="10" value="100">
+            </div>
+            <div class="settings-item">
+                <label>Gravity <span id="gravityValue">Normal</span></label>
+                <input type="range" id="gravitySlider" min="0.1" max="1" step="0.1" value="0.3">
+            </div>
+            <button class="close-settings" id="closeSettings">Done</button>
         </div>
     </div>
 
@@ -489,7 +574,76 @@
             }
         });
 
+        // Settings panel
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const closeSettingsBtn = document.getElementById('closeSettings');
+        const speedSlider = document.getElementById('speedSlider');
+        const jumpSlider = document.getElementById('jumpSlider');
+        const gravitySlider = document.getElementById('gravitySlider');
+
+        let pipeSpeedMultiplier = 1;
+        let jumpHeightMultiplier = 1;
+        let gravityMultiplier = 1;
+
+        // Load saved settings
+        function loadSettings() {
+            const saved = localStorage.getItem('flappybirdSettings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                pipeSpeedMultiplier = settings.speed || 1;
+                jumpHeightMultiplier = settings.jump || 1;
+                gravityMultiplier = settings.gravity || 1;
+
+                speedSlider.value = pipeSpeedMultiplier;
+                jumpSlider.value = jumpHeightMultiplier;
+                gravitySlider.value = gravityMultiplier;
+
+                updateSettingsDisplay();
+            }
+        }
+
+        function saveSettings() {
+            const settings = {
+                speed: pipeSpeedMultiplier,
+                jump: jumpHeightMultiplier,
+                gravity: gravityMultiplier
+            };
+            localStorage.setItem('flappybirdSettings', JSON.stringify(settings));
+        }
+
+        function updateSettingsDisplay() {
+            document.getElementById('speedValue').textContent = pipeSpeedMultiplier + 'x';
+            document.getElementById('jumpValue').textContent = Math.round(jumpHeightMultiplier * 100) + '%';
+            document.getElementById('gravityValue').textContent = gravityMultiplier.toFixed(1) + 'x';
+        }
+
+        settingsBtn.addEventListener('click', () => {
+            settingsPanel.style.display = 'flex';
+        });
+
+        closeSettingsBtn.addEventListener('click', () => {
+            settingsPanel.style.display = 'none';
+            saveSettings();
+        });
+
+        speedSlider.addEventListener('input', (e) => {
+            pipeSpeedMultiplier = parseFloat(e.target.value);
+            updateSettingsDisplay();
+        });
+
+        jumpSlider.addEventListener('input', (e) => {
+            jumpHeightMultiplier = parseFloat(e.target.value) / 100;
+            updateSettingsDisplay();
+        });
+
+        gravitySlider.addEventListener('input', (e) => {
+            gravityMultiplier = parseFloat(e.target.value);
+            updateSettingsDisplay();
+        });
+
         // Initialize
+        loadSettings();
         resizeCanvas();
         bird.x = canvas.width * 0.2;
         bird.y = canvas.height * 0.5;
