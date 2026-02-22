@@ -126,10 +126,8 @@
 
         // Responsive canvas
         function resizeCanvas() {
-            const maxWidth = Math.min(window.innerWidth - 20, 400);
-            const maxHeight = Math.min(window.innerHeight - 20, 600);
-            canvas.width = maxWidth;
-            canvas.height = maxHeight;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
 
             // Reset ground position
             ground.y = canvas.height - 80;
@@ -145,11 +143,11 @@
         const bird = {
             x: 0,
             y: 0,
-            width: 40,
-            height: 30,
+            width: canvas.width * 0.1,
+            height: canvas.width * 0.075,
             velocity: 0,
             gravity: 0.3,
-            jump: -7,
+            jump: -canvas.height * 0.025,
             rotation: 0
         };
 
@@ -161,15 +159,15 @@
 
         // Pipes
         const pipes = [];
-        const pipeWidth = 70;
-        const pipeGap = 180;
+        const pipeWidth = canvas.width * 0.15;
+        const pipeGap = canvas.height * 0.25;
         let pipeTimer = 0;
-        const pipeInterval = 90;
+        const pipeInterval = Math.max(60, Math.floor(canvas.height * 0.15));
 
         // Ground
         const ground = {
             y: 0,
-            height: 80
+            height: canvas.height * 0.15
         };
 
         // Audio context for sound effects
@@ -328,13 +326,13 @@
             bird.y += bird.velocity;
 
             // Bird rotation based on velocity
-            bird.rotation = Math.min(Math.max(bird.velocity * 0.05, -0.5), 1.5);
+            bird.rotation = Math.min(Math.max(bird.velocity * 0.1, -0.5), 1.5);
 
             // Pipe generation
             pipeTimer++;
             if (pipeTimer >= pipeInterval) {
                 pipeTimer = 0;
-                const minHeight = 80;
+                const minHeight = canvas.height * 0.2;
                 const maxHeight = canvas.height - pipeGap - ground.height - minHeight;
                 const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
 
@@ -348,7 +346,7 @@
 
             // Update pipes
             pipes.forEach(pipe => {
-                pipe.x -= 3;
+                pipe.x -= canvas.width * 0.02;
 
                 // Score
                 if (!pipe.passed && pipe.x + pipeWidth < bird.x) {
