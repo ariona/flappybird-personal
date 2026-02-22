@@ -70,6 +70,23 @@
             transform: translateY(2px);
             box-shadow: 0 2px 0 #388E3C;
         }
+        .fullscreen-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 16px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            border: 2px solid white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 100;
+        }
+        .fullscreen-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
         .score {
             position: absolute;
             top: 10px;
@@ -84,7 +101,8 @@
 </head>
 <body>
     <div class="game-container">
-        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        <button class="fullscreen-btn" id="fullscreenBtn">⛶ Fullscreen</button>
+        <canvas id="gameCanvas"></canvas>
         <div class="score" id="scoreDisplay">0</div>
         <div class="start-screen" id="startScreen">
             <h1>Flappy Bird</h1>
@@ -99,34 +117,52 @@
         const startScreen = document.getElementById('startScreen');
         const scoreDisplay = document.getElementById('scoreDisplay');
         const startBtn = document.getElementById('startBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
 
         // Game state
         let gameState = 'start'; // start, playing, gameover
         let score = 0;
         let animationId;
 
+        // Responsive canvas
+        function resizeCanvas() {
+            const maxWidth = Math.min(window.innerWidth - 20, 400);
+            const maxHeight = Math.min(window.innerHeight - 20, 600);
+            canvas.width = maxWidth;
+            canvas.height = maxHeight;
+
+            // Reset ground position
+            ground.y = canvas.height - 80;
+
+            // Reset bird position if on start screen
+            if (gameState === 'start') {
+                bird.x = canvas.width * 0.2;
+                bird.y = canvas.height * 0.5;
+            }
+        }
+
         // Bird
         const bird = {
-            x: 80,
-            y: 300,
+            x: 0,
+            y: 0,
             width: 40,
             height: 30,
             velocity: 0,
-            gravity: 0.5,
-            jump: -9,
+            gravity: 0.3,
+            jump: -7,
             rotation: 0
         };
 
         // Pipes
         const pipes = [];
         const pipeWidth = 70;
-        const pipeGap = 160;
+        const pipeGap = 180;
         let pipeTimer = 0;
         const pipeInterval = 90;
 
         // Ground
         const ground = {
-            y: canvas.height - 80,
+            y: 0,
             height: 80
         };
 
@@ -334,7 +370,8 @@
         }
 
         function resetGame() {
-            bird.y = 300;
+            bird.x = canvas.width * 0.2;
+            bird.y = canvas.height * 0.5;
             bird.velocity = 0;
             bird.rotation = 0;
             pipes.length = 0;
@@ -369,6 +406,18 @@
             }
         });
 
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
@@ -383,6 +432,22 @@
                 resetGame();
             }
         });
+
+        // Fullscreen
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                fullscreenBtn.textContent = '⛶ Exit';
+            } else {
+                document.exitFullscreen();
+                fullscreenBtn.textContent = '⛶ Fullscreen';
+            }
+        });
+
+        // Initialize
+        resizeCanvas();
+        bird.x = canvas.width * 0.2;
+        bird.y = canvas.height * 0.5;
 
         // Start game loop
         gameLoop();
