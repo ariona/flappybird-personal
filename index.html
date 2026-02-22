@@ -153,6 +153,12 @@
             rotation: 0
         };
 
+        // Parallax background
+        const clouds = [];
+        let cloudTimer = 0;
+        const cloudInterval = 150;
+        let groundOffset = 0;
+
         // Pipes
         const pipes = [];
         const pipeWidth = 70;
@@ -165,6 +171,44 @@
             y: 0,
             height: 80
         };
+
+        // Audio context for sound effects
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'jump') {
+                oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'score') {
+                oscillator.frequency.setValueAtTime(523, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.2);
+            } else if (type === 'hit') {
+                oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            }
+        }
 
         // Bird colors
         const birdColors = {
@@ -263,11 +307,11 @@
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Clouds
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            drawCloud(50, 80, 60);
-            drawCloud(200, 120, 80);
-            drawCloud(320, 60, 50);
+            // Draw parallax clouds
+            clouds.forEach(cloud => {
+                ctx.fillStyle = `rgba(255, 255, 255, ${cloud.opacity})`;
+                drawCloud(cloud.x, cloud.y, cloud.size);
+            });
         }
 
         function drawCloud(x, y, size) {
@@ -311,6 +355,7 @@
                     pipe.passed = true;
                     score++;
                     scoreDisplay.textContent = score;
+                    playSound('score');
                 }
             });
 
@@ -353,6 +398,7 @@
             }
             if (gameState === 'playing') {
                 bird.velocity = bird.jump;
+                playSound('jump');
             }
         }
 
@@ -362,6 +408,7 @@
         }
 
         function gameOver() {
+            playSound('hit');
             gameState = 'gameover';
             startScreen.style.display = 'flex';
             startScreen.querySelector('h1').textContent = 'Game Over!';
